@@ -1,0 +1,41 @@
+services:
+  go-app:
+    container_name: go-app01
+    image: ikromovpro/go-app:v1 
+    restart: on-failure
+    ports:
+      - "8000:3030"
+    environment:
+      - ENVIROMENT=DEV
+      - LOG_LEVEL=info
+      - GRPC_PORT=80
+      - DB_URL=postgres://admin:supersecret@10.10.10.1:5432/exam-db01
+      - POD_IP=172.12.0.2
+
+  flask-app:
+    container_name: flask-app01
+    image: ikromovpro/flask-app:v1
+    restart: on-failure
+    ports:
+      - "5000:5000"
+    environment:
+      - ENVIROMENT=DEV
+      - LOG_LEVEL=info
+      - GRPC_PORT=80
+      - DB_URL=postgres://admin:supersecret@10.10.10.1:5432/exam-db02
+      - POD_IP=172.12.0.3
+      - FALSK_DEBUG=1
+  
+  nodejs-app:
+    container_name: nodejs-app01
+    image: ikromovpro/nodejs-app:v1
+    restart: on-failure
+    ports:
+      - "3000:3000"
+    environment:
+      - ENVIROMENT=DEV
+      - LOG_LEVEL=info
+      - GRPC_PORT=80
+      - DB_URL=postgres://admin:supersecret@10.10.10.1:5432/exam-db03
+      - POD_IP=172.12.0.4
+

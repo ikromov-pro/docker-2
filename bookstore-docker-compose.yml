@@ -1,0 +1,87 @@
+services:
+  api-gateway:
+    container_name: bookstore-gateeway-app01
+    image: bookstore-gateway:v1 
+    restart: on-failure
+    ports:
+      - "8090:8080"
+    networks:
+      - bookstore-net
+    
+  
+  postgres-db:
+    container_name: bookstore-postgres-db01
+    image: postgres:latest
+    restart: always
+    environment:
+      - POSTGRES_USER=myuser
+      - POSTGRES_PASSWORD=mypassword
+      - POSTGRES_DB=bookstore_db
+    volumes:
+      - ./db_data:/var/lib/postgresql 
+    ports:
+      - "5432:5432"
+    networks:
+      - bookstore-net
+
+  flask-app:
+    container_name: bookstore-app01
+    image: bookstore:v1
+    restart: on-failure
+    ports:
+      - "5000:5000"
+    depends_on:
+      - postgres-db
+    environment:
+      - FLASK_APP=run.py
+      - FLASK_ENV=development
+      - DATABASE_URL=postgresql://myuser:mypassword@postgres-db:5432/bookstore_db
+      - SECRET_KEY=your_secret_key99
+      - DEBUG=True
+    networks:
+      - bookstore-net
+
+  mongodb:
+    image: mongo:7
+    container_name: bookstore-order-mongodb
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: bookstore
+      MONGO_INITDB_ROOT_PASSWORD: Secret101
+      MONGO_INITDB_DATABASE: bookstore 
+    volumes:
+      - mongodb_data:/data/db
+
+    networks:
+      - bookstore-net
+
+  fastapi-app:
+    container_name: bookstore-order-app01
+    image: bookstore-order:v1
+    restart: on-failure
+    ports:
+      - "8000:8000"
+    environment:
+      MONGODB_URL: mongodb://bookstore:Secret101@mongodb:27017/bookstore?authSource=admin
+      DATABASE_NAME: "bookstore"
+      SECRET_KEY: "1122"
+      DEBUG: "true"
+      BOOK_SERVICE_URL: http://flask-app:5000
+
+    depends_on:
+      - mongodb
+    volumes:
+      - ./bookstore-order-svc/app:/app
+    command: sh -c "uvicorn main:app --host 0.0.0.0 --port 8000 --reload"
+    networks:
+      - bookstore-net
+
+volumes:
+  db_data:
+  app:
+  mongodb_data:
+
+networks:
+  bookstore-net:
+    driver: bridge
